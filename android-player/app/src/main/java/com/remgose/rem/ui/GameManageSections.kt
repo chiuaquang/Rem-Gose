@@ -122,6 +122,10 @@ fun ManageGameSection(game: GameEntity) {
             manager.storageBreakdown().forEach { (name, size) ->
                 Text("   $name — ${GameDataManager.formatSize(size)}", color = RemGoseColors.TextMuted, fontSize = 12.sp)
             }
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(onClick = {
+                context.startActivity(FileBrowserActivity.intent(context, root!!.absolutePath, game.name))
+            }) { Text(s.browseFiles) }
         }
         Spacer(Modifier.height(10.dp))
         // ---- Mod Management ----

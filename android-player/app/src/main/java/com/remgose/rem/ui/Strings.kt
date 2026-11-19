@@ -153,6 +153,15 @@ data class Strings(
     val gamesFolder: String = "Games folder: %s",
     val importingToast: String = "Importing game %s…",
     val importReadError: String = "Cannot read the selected file",
+    val importChooserTitle: String = "Import game",
+    val importFromZip: String = "From ZIP file",
+    val importFromFolder: String = "From folder",
+    val browseFiles: String = "Browse files",
+    val rename: String = "Rename",
+    val renameTitle: String = "Rename",
+    val deleteItemTitle: String = "Delete this item?",
+    val deleteItemMsg: String = "'%s' will be deleted permanently.",
+    val emptyFolder: String = "Empty folder",
 )
 
 val StringsEn = Strings()

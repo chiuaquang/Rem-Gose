@@ -44,9 +44,38 @@ class MainActivity : ComponentActivity() {
                         ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                         if (uri != null) scope.launch { importZip(uri) }
                     }
+                    // Chon THU MUC game Ren'Py (da giai nen san) bang SAF
+                    val folderPicker = rememberLauncherForActivityResult(
+                        ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+                        if (uri != null) importFolder(uri)
+                    }
+                    var showImportChooser by remember { mutableStateOf(false) }
+                    if (showImportChooser) {
+                        val ls = LocalStrings.current
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showImportChooser = false },
+                            title = { androidx.compose.material3.Text(ls.importChooserTitle) },
+                            text = {
+                                androidx.compose.foundation.layout.Column {
+                                    androidx.compose.material3.TextButton(onClick = {
+                                        showImportChooser = false
+                                        picker.launch(arrayOf("application/zip", "application/x-zip-compressed"))
+                                    }) { androidx.compose.material3.Text("🗜  " + ls.importFromZip) }
+                                    androidx.compose.material3.TextButton(onClick = {
+                                        showImportChooser = false
+                                        folderPicker.launch(null)
+                                    }) { androidx.compose.material3.Text("📁  " + ls.importFromFolder) }
+                                }
+                            },
+                            confirmButton = {
+                                androidx.compose.material3.TextButton(onClick = { showImportChooser = false }) {
+                                    androidx.compose.material3.Text(ls.cancel)
+                                }
+                            })
+                    }
                     LibraryScreen(
                         games = games,
-                        onImportClick = { picker.launch(arrayOf("application/zip", "application/x-zip-compressed")) },
+                        onImportClick = { showImportChooser = true },
                         onGameClick = { g -> startActivity(Intent(this, GameDetailActivity::class.java).putExtra("game_name", g.name)) },
                         onPlayClick = { g -> startActivity(GameRunnerActivity.intent(this, g.name)) },
                         onSettingsClick = { startActivity(Intent(this, com.remgose.rem.ui.SettingsActivity::class.java)) },
@@ -69,5 +98,19 @@ class MainActivity : ComponentActivity() {
             OneTimeWorkRequestBuilder<GameImportWorker>()
                 .setInputData(workDataOf("source_uri" to uri.toString(), "name" to name)).build())
         Toast.makeText(this, strings.importingToast.format(name), Toast.LENGTH_SHORT).show()
+    }
+
+    /** Nhap game tu thu muc nguoi dung chon (SAF tree): giu quyen doc ben vung roi giao worker copy. */
+    private fun importFolder(uri: Uri) {
+        runCatching {
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val rawName = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, uri)?.name ?: "game"
+        val name = rawName.replace(Regex("[^A-Za-z0-9_.-]"), "_")
+        WorkManager.getInstance(this).enqueue(
+            OneTimeWorkRequestBuilder<GameImportWorker>()
+                .setInputData(workDataOf(
+                    "source_uri" to uri.toString(), "tree_uri" to uri.toString(), "name" to name)).build())
+        Toast.makeText(this, "Đang nhập game $name…", Toast.LENGTH_SHORT).show()
     }
 }

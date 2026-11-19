@@ -142,4 +142,13 @@ val StringsVi = Strings(
     gamesFolder = "Thư mục game: %s",
     importingToast = "Đang nhập game %s…",
     importReadError = "Không đọc được file đã chọn",
+    importChooserTitle = "Nhập game",
+    importFromZip = "Từ file ZIP",
+    importFromFolder = "Từ thư mục",
+    browseFiles = "Duyệt file",
+    rename = "Đổi tên",
+    renameTitle = "Đổi tên",
+    deleteItemTitle = "Xoá mục này?",
+    deleteItemMsg = "'%s' sẽ bị xoá vĩnh viễn.",
+    emptyFolder = "Thư mục trống",
 )

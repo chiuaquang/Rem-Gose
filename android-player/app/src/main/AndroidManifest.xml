@@ -28,6 +28,7 @@
 
         <activity android:name=".ui.GameDetailActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
+        <activity android:name=".ui.FileBrowserActivity" android:exported="false" />
 
         <!-- Moi game chay o process rieng nhu RenDroid (:game0). V1 dung 1 slot,
              mo rong them Slot1..3 khi can chay nhieu game song song. -->

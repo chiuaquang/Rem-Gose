@@ -2,6 +2,7 @@ package com.remgose.rem.worker
 
 import android.content.Context
 import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -31,10 +32,16 @@ class GameImportWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker
             db.gameDao().upsert(GameEntity(
                 name = name, displayName = name, creationTimestamp = System.currentTimeMillis(),
                 sourceUri = sourceUri, path = null, renPyVersion = null, statusPhase = "IMPORTING"))
-            val src = File(applicationContext.cacheDir, "import/$name.zip")
-            if (src.isFile) SafeUnzip.unzip(src, dest) { done, total ->
-                // WorkManager progress: UI doc bang Flow tu DB + progress nay
-                setProgressAsync(workDataOf("done" to done, "total" to total))
+            val treeUri = inputData.getString("tree_uri")
+            if (treeUri != null) {
+                // Nhap tu THU MUC (SAF): copy toan bo cay thu muc vao dest
+                copyTree(Uri.parse(treeUri), dest)
+            } else {
+                val src = File(applicationContext.cacheDir, "import/$name.zip")
+                if (src.isFile) SafeUnzip.unzip(src, dest) { done, total ->
+                    // WorkManager progress: UI doc bang Flow tu DB + progress nay
+                    setProgressAsync(workDataOf("done" to done, "total" to total))
+                }
             }
             val detected = GameDetector.detect(dest).getOrThrow()
             WrapperGenerator.prepare(detected.root)
@@ -59,6 +66,27 @@ class GameImportWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker
             db.gameDao().setStatus(name, "ERROR", e.message)
             Result.failure()
         }
+    }
+
+    /** Copy toan bo cay thu muc SAF vao dest (noi dung ben trong thu muc goc). */
+    private fun copyTree(treeUri: Uri, destDir: File) {
+        val tree = DocumentFile.fromTreeUri(applicationContext, treeUri)
+            ?: error("Cannot open the selected folder")
+        destDir.mkdirs()
+        fun copyNode(node: DocumentFile, target: File) {
+            if (node.isDirectory) {
+                target.mkdirs()
+                node.listFiles().forEach { child ->
+                    copyNode(child, File(target, child.name ?: "unnamed"))
+                }
+            } else {
+                target.parentFile?.mkdirs()
+                val input = applicationContext.contentResolver.openInputStream(node.uri)
+                    ?: error("Cannot read ${node.name}")
+                input.use { inp -> target.outputStream().use { inp.copyTo(it) } }
+            }
+        }
+        tree.listFiles().forEach { child -> copyNode(child, File(destDir, child.name ?: "unnamed")) }
     }
 }
 

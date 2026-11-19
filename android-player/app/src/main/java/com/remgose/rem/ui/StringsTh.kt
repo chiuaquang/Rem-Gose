@@ -142,4 +142,13 @@ val StringsTh = Strings(
     gamesFolder = "โฟลเดอร์เกม: %s",
     importingToast = "กำลังนำเข้าเกม %s…",
     importReadError = "อ่านไฟล์ที่เลือกไม่ได้",
+    importChooserTitle = "นำเข้าเกม",
+    importFromZip = "จากไฟล์ ZIP",
+    importFromFolder = "จากโฟลเดอร์",
+    browseFiles = "เรียกดูไฟล์",
+    rename = "เปลี่ยนชื่อ",
+    renameTitle = "เปลี่ยนชื่อ",
+    deleteItemTitle = "ลบรายการนี้?",
+    deleteItemMsg = "'%s' จะถูกลบถาวร",
+    emptyFolder = "โฟลเดอร์ว่าง",
 )

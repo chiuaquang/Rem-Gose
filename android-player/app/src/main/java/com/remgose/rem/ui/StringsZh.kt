@@ -142,4 +142,13 @@ val StringsZh = Strings(
     gamesFolder = "游戏文件夹: %s",
     importingToast = "正在导入游戏 %s…",
     importReadError = "无法读取所选文件",
+    importChooserTitle = "导入游戏",
+    importFromZip = "从 ZIP 文件",
+    importFromFolder = "从文件夹",
+    browseFiles = "浏览文件",
+    rename = "重命名",
+    renameTitle = "重命名",
+    deleteItemTitle = "删除此项?",
+    deleteItemMsg = "'%s' 将被永久删除。",
+    emptyFolder = "空文件夹",
 )
