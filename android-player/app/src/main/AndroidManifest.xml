@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:name=".RemGoseApplication"
+        android:allowBackup="true"
+        android:icon="@drawable/rem_gose_logo"
+        android:roundIcon="@drawable/rem_gose_logo"
+        android:label="Rem Gose"
+        android:theme="@style/Theme.RemGose"
+        android:requestLegacyExternalStorage="true"
+        android:largeHeap="true"
+        android:hardwareAccelerated="true">
+
+        <activity android:name=".MainActivity" android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.GameDetailActivity" android:exported="false" />
+        <activity android:name=".ui.SettingsActivity" android:exported="false" />
+
+        <!-- Moi game chay o process rieng nhu RenDroid (:game0). V1 dung 1 slot,
+             mo rong them Slot1..3 khi can chay nhieu game song song. -->
+        <activity android:name=".runner.GameRunnerActivity"
+            android:exported="false"
+            android:process=":game0"
+            android:launchMode="singleTask"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|navigation"
+            android:theme="@style/Theme.RemGose.Game" />
+
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="com.remgose.rem.fileprovider"
+            android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

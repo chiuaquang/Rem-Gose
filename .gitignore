@@ -1,0 +1,14 @@
+# Rem Gose — KHONG BAO GIO day file ky / mat khau len GitHub.
+# Chu ky cua Anh Quang chi nam o may cua Rem, khong phai de chia se.
+signing/
+**/keystore.properties
+*.jks
+*.p12
+*.keystore
+*.key
+local.properties
+.gradle/
+build/
+app/build/
+*.iml
+.DS_Store
