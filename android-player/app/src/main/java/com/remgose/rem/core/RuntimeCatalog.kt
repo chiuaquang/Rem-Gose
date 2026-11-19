@@ -3,8 +3,9 @@ package com.remgose.rem.core
 /**
  * Danh muc runtime Rem Gose ho tro.
  * Hoc tu RenDroid: runtime tach theo phien ban, game map sang runtime gan nhat.
- * V1 chi bundle 3 runtime dau (inBundle=true), cac muc con lai tai on-demand
- * tu nguon chinh thuc renpy.org khi nguoi dung can.
+ * Ban hien tai bundle san runtime 8.5.2 (engine Ren'Py chinh thuc trong APK);
+ * game 8.x chay bang engine nay nho Ren'Py tuong thich tien trong cung major.
+ * Runtime tai them on-demand tu renpy.org se bo sung sau (V1.2).
  */
 data class RuntimeSpec(
     val version: RenPyVersion,
@@ -22,7 +23,7 @@ object RuntimeCatalog {
         RuntimeSpec(
             version = ver,
             moduleName = "runtime_" + v.replace('.', '_'),
-            inBundle = v in setOf("7.3.5", "8.2.3", "8.3.7"),
+            inBundle = v == BUNDLED_VERSION,
             downloadUrl = "https://www.renpy.org/dl/$v/",
         )
     }
@@ -48,4 +49,22 @@ object RuntimeCatalog {
 
     fun byVersion(version: String?): RuntimeSpec? =
         specs.firstOrNull { it.version.toString() == version }
+
+    /** Runtime duoc bundle san trong APK (engine that, chay duoc ngay). */
+    const val BUNDLED_VERSION = "8.5.2"
+
+    fun bundledSpec(): RuntimeSpec = byVersion(BUNDLED_VERSION)!!
+
+    /**
+     * Engine thuc te se chay 1 game:
+     * - Trung runtime bundle -> chinh no.
+     * - Cung major voi runtime bundle -> runtime bundle (Ren'Py 8.x tuong
+     *   thich tien: game 8.0-8.6 chay tren engine 8.5.2).
+     * - Khac major (game 7.x) -> chua co engine, tra null.
+     */
+    fun engineFor(gameVersion: RenPyVersion?): RuntimeSpec? {
+        if (gameVersion == null) return null
+        val bundled = bundledSpec()
+        return if (gameVersion.major == bundled.version.major) bundled else null
+    }
 }

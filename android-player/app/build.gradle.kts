@@ -34,8 +34,8 @@ android {
         applicationId = "com.remgose.rem"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
     buildTypes {
         release {
@@ -48,7 +48,11 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
-    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    packaging {
+        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+        // librenpython.so can mo file .so that tren dia de nap module native
+        jniLibs { useLegacyPackaging = true }
+    }
 }
 
 dependencies {
@@ -68,6 +72,8 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    // Chi de bien dich PythonSDLActivity cua Ren'Py (app khong dung asset pack)
+    implementation("com.google.android.play:asset-delivery:2.3.0")
     testImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

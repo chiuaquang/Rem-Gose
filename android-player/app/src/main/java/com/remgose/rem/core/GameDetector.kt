@@ -33,8 +33,11 @@ object GameDetector {
         }
         val renpyDir = File(effectiveRoot, "renpy")
         val version = detectVersion(renpyDir, gameDir)
-        val icon = listOf("gui/window_icon.png", "gui/window_icon.jpg", "icon.png")
-            .map { File(gameDir, it) }.firstOrNull { it.isFile }
+        val icon = listOf(
+            File(gameDir, "gui/window_icon.png"), File(gameDir, "gui/window_icon.jpg"),
+            File(gameDir, "icon.png"), File(effectiveRoot, "icon.png"),
+            File(effectiveRoot, "icon.jpg"),
+        ).firstOrNull { it.isFile }
         return Result.success(DetectedGame(
             root = effectiveRoot, gameDir = gameDir, renPyVersion = version,
             hasRenPyDir = renpyDir.isDirectory, iconFile = icon,
@@ -42,15 +45,30 @@ object GameDetector {
         ))
     }
 
-    private fun detectVersion(renpyDir: File, gameDir: File): RenPyVersion? {
-        // renpy/__init__.py chua: version_tuple = (8, 3, 7, ...) hoac version = "8.3.7"
+    /**
+     * Doc phien ban Ren'Py bang nhieu chien luoc (game thuc te rat da dang):
+     * 1. renpy/vc_version.py: version = '8.5.2.26010301' (Ren'Py moi, >= 8.2)
+     * 2. renpy/__init__.py kieu cu: version_tuple = (8, 3, 7, ...)
+     * 3. renpy/__init__.py: version = "8.3.7"
+     * 4. game/script_version.txt
+     */
+    fun detectVersion(renpyDir: File, gameDir: File): RenPyVersion? {
+        val vc = File(renpyDir, "vc_version.py")
+        if (vc.isFile) {
+            val text = runCatching { vc.readText() }.getOrDefault("")
+            Regex("""(?m)^version\s*=\s*['"](\d+\.\d+\.\d+)""").find(text)?.let {
+                return RenPyVersion.parse(it.groupValues[1])
+            }
+        }
         val initPy = File(renpyDir, "__init__.py")
         if (initPy.isFile) {
             val text = runCatching { initPy.readText() }.getOrDefault("")
             Regex("""version_tuple\s*=\s*\(\s*(\d+),\s*(\d+),\s*(\d+)""").find(text)?.let {
                 return RenPyVersion(it.groupValues[1].toInt(), it.groupValues[2].toInt(), it.groupValues[3].toInt())
             }
-            RenPyVersion.parse(text.lineSequence().firstOrNull { it.contains("version") })?.let { return it }
+            Regex("""(?m)^version\s*=\s*['"](\d+\.\d+\.\d+)""").find(text)?.let {
+                return RenPyVersion.parse(it.groupValues[1])
+            }
         }
         val sv = File(gameDir, "script_version.txt")
         if (sv.isFile) return RenPyVersion.parse(runCatching { sv.readText() }.getOrNull())

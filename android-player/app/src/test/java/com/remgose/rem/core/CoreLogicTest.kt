@@ -20,6 +20,29 @@ class CoreLogicTest {
         // Game 6.x khong co cung major -> null de nguoi dung chon tay
         assertNull(RuntimeCatalog.autoAdapt(RenPyVersion(6, 99, 0)))
     }
+    @Test fun engineForUsesBundledForAll8x() {
+        // Moi game 8.x chay bang engine bundle 8.5.2
+        assertEquals("8.5.2", RuntimeCatalog.engineFor(RenPyVersion(8, 3, 7))?.version.toString())
+        assertEquals("8.5.2", RuntimeCatalog.engineFor(RenPyVersion(8, 5, 2))?.version.toString())
+        assertEquals("8.5.2", RuntimeCatalog.engineFor(RenPyVersion(8, 0, 3))?.version.toString())
+        // Game 7.x chua co engine -> null; version null -> null
+        assertNull(RuntimeCatalog.engineFor(RenPyVersion(7, 4, 11)))
+        assertNull(RuntimeCatalog.engineFor(null))
+        assertTrue(RuntimeCatalog.bundledSpec().inBundle)
+    }
+    @Test fun detectVersionFromVcVersionPy() {
+        // Ren'Py moi (>= 8.2) ghi version trong renpy/vc_version.py dang version = '8.5.2.26010301'
+        val root = Files.createTempDirectory("rgvc").toFile()
+        val renpyDir = File(root, "renpy").apply { mkdirs() }
+        val gameDir = File(root, "game").apply { mkdirs() }
+        File(renpyDir, "vc_version.py").writeText(
+            "branch = 'fix'\nnightly = False\nofficial = True\nversion = '8.3.7.25031701'\nversion_name = 'X'\n")
+        assertEquals(RenPyVersion(8, 3, 7), GameDetector.detectVersion(renpyDir, gameDir))
+        // Ban cu: version_tuple literal trong __init__.py
+        File(renpyDir, "vc_version.py").delete()
+        File(renpyDir, "__init__.py").writeText("version_tuple = (7, 4, 11, 0)\n")
+        assertEquals(RenPyVersion(7, 4, 11), GameDetector.detectVersion(renpyDir, gameDir))
+    }
     @Test fun detectRequiresGameDir() {
         val root = Files.createTempDirectory("rg").toFile()
         assertTrue(GameDetector.detect(root).isFailure)

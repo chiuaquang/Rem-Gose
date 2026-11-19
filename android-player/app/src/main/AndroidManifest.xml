@@ -39,6 +39,18 @@
             android:configChanges="orientation|screenSize|keyboardHidden|navigation"
             android:theme="@style/Theme.RemGose.Game" />
 
+        <!-- Engine Ren'Py that (PythonSDLActivity), cung process :game0.
+             configChanges theo dung mau RAPT chinh thuc de SDL khong bi
+             khoi dong lai khi xoay man hinh/doi locale. -->
+        <activity android:name=".runner.GameEngineActivity"
+            android:exported="false"
+            android:process=":game0"
+            android:launchMode="singleTop"
+            android:alwaysRetainTaskState="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:theme="@style/Theme.RemGose.Game" />
+
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="com.remgose.rem.fileprovider"
             android:exported="false" android:grantUriPermissions="true">

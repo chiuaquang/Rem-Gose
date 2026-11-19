@@ -69,12 +69,17 @@ class RuntimeInstallWorker(ctx: Context, params: WorkerParameters) : CoroutineWo
         val db = AppDatabase.get(applicationContext)
         val spec = RuntimeCatalog.byVersion(version) ?: return Result.failure()
         db.runtimeDao().setStatus(version, "INSTALLING", "Đang chuẩn bị runtime $version")
-        // TODO V1.1: tai goi runtime tu spec.downloadUrl, giai nen vao files/runtimes/<version>,
-        // kiem tra librenpython_<version>.so (8.x) hoac bo SDL2+python2.7 (7.x) roi set READY.
+        // Engine bundle san 8.5.2 chay duoc moi game 8.x (tuong thich tien cung major).
+        // Runtime 7.x se tai them tu renpy.org o ban cap nhat runtime tiep theo.
+        val playable = RuntimeCatalog.engineFor(spec.version) != null
         db.runtimeDao().setStatus(version,
-            if (spec.inBundle) "READY" else "ERROR",
-            if (spec.inBundle) null else "Runtime $version chưa được bundle - cần tải ở bản V1.1")
-        return if (spec.inBundle) Result.success() else Result.failure()
+            if (playable) "READY" else "ERROR",
+            when {
+                spec.inBundle -> null
+                playable -> "Chạy bằng engine ${RuntimeCatalog.BUNDLED_VERSION} tích hợp sẵn"
+                else -> "Runtime $version chưa có trong app - sẽ tải thêm ở bản cập nhật runtime tiếp theo"
+            })
+        return if (playable) Result.success() else Result.failure()
     }
 }
 

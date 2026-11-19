@@ -13,6 +13,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,7 +52,9 @@ class SettingsActivity : ComponentActivity() {
             val store = remember { SettingsStore(this) }
             val s by store.settings.collectAsState(initial = AppSettings())
             RemGoseTheme(theme = s.theme, dynamicColor = s.dynamicColor) {
-                SettingsScreen(onBack = { finish() })
+                CompositionLocalProvider(LocalStrings provides stringsFor(s.language)) {
+                    SettingsScreen(onBack = { finish() })
+                }
             }
         }
     }
@@ -69,6 +74,7 @@ val AppLanguages = listOf(
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val s = LocalStrings.current
     val store = remember { SettingsStore(context) }
     val settings by store.settings.collectAsState(initial = AppSettings())
     val scope = rememberCoroutineScope()
@@ -92,7 +98,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 RemGoseLogo(52)
                 Spacer(Modifier.width(14.dp))
                 Column {
-                    Text("Settings", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(s.settings, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     Text("Rem Gose · Ren'Py Player", color = Color(0xE6FFFFFF), fontSize = 13.sp)
                 }
             }
@@ -100,32 +106,32 @@ fun SettingsScreen(onBack: () -> Unit) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
 
             // ---------- Appearance (RenDroid) ----------
-            SettingsSection("Appearance") {
-                ValueRow("Theme", when (settings.theme) {
-                    "dark" -> "Dark"; "light" -> "Light"; else -> "System Default"
+            SettingsSection(s.appearance) {
+                ValueRow(s.theme, when (settings.theme) {
+                    "dark" -> s.themeDark; "light" -> s.themeLight; else -> s.themeSystem
                 }) { themeDialog = true }
-                SwitchRow("Dynamic Color", settings.dynamicColor,
-                    "Use system wallpaper colors (Android 12+)") { scope.launch { store.setDynamicColor(it) } }
-                ValueRow("Language", AppLanguages.firstOrNull { it.first == settings.language }?.second
+                SwitchRow(s.dynamicColor, settings.dynamicColor,
+                    s.dynamicColorSub) { scope.launch { store.setDynamicColor(it) } }
+                ValueRow(s.language, AppLanguages.firstOrNull { it.first == settings.language }?.second
                     ?: "System Default") { languageDialog = true }
-                SwitchRow("Prefer landscape", settings.preferLandscape,
-                    "Start games in landscape. Turn off to follow system rotation settings.") { v ->
+                SwitchRow(s.preferLandscape, settings.preferLandscape,
+                    s.preferLandscapeSub) { v ->
                     scope.launch { store.setPreferLandscape(v); store.setOrientation(if (v) "landscape" else "auto") }
                 }
                 Column(Modifier.padding(vertical = 6.dp)) {
-                    Text("Cỡ chữ: ${(settings.textScale * 100).toInt()}%", color = RemGoseColors.TextPrimary)
+                    Text(s.textSize.format((settings.textScale * 100).toInt()), color = RemGoseColors.TextPrimary)
                     Slider(value = settings.textScale,
                         onValueChange = { v -> scope.launch { store.setTextScale(v) } }, valueRange = 0.85f..1.3f)
                 }
-                SwitchRow("Giữ màn hình sáng khi chơi", settings.keepScreenOn) { scope.launch { store.setKeepScreenOn(it) } }
-                SwitchRow("Rung khi tương tác", settings.vibration) { scope.launch { store.setVibration(it) } }
+                SwitchRow(s.keepScreenOn, settings.keepScreenOn) { scope.launch { store.setKeepScreenOn(it) } }
+                SwitchRow(s.vibration, settings.vibration) { scope.launch { store.setVibration(it) } }
             }
 
             // ---------- Management (RenDroid) ----------
-            SettingsSection("Management") {
-                ExpandRow("🔧  Runtime Management", "Installed runtimes, cleanup & download", openSection == "runtime") { toggle("runtime") }
+            SettingsSection(s.management) {
+                ExpandRow(s.runtimeManage, s.runtimeManageSub, openSection == "runtime") { toggle("runtime") }
                 if (openSection == "runtime") {
-                    SwitchRow("Tự động chọn runtime theo phiên bản game", settings.autoAdaptRuntime) {
+                    SwitchRow(s.autoAdapt, settings.autoAdaptRuntime) {
                         scope.launch { store.setAutoAdapt(it) }
                     }
                     RuntimeList(runtimes)
@@ -142,30 +148,30 @@ fun SettingsScreen(onBack: () -> Unit) {
                                     }
                                 }
                             }
-                            Toast.makeText(context, "Đã dọn $cleaned runtime không dùng", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, s.cleanedToast.format(cleaned), Toast.LENGTH_SHORT).show()
                         }
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Clean Unused Runtimes") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text(s.cleanUnused) }
                 }
-                ExpandRow("🗄  Storage Management", "Storage usage & cache cleanup", openSection == "storage") { toggle("storage") }
+                ExpandRow(s.storageManage, s.storageManageSub, openSection == "storage") { toggle("storage") }
                 if (openSection == "storage") {
                     StorageStats()
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(onClick = {
                         context.cacheDir.deleteRecursively(); context.cacheDir.mkdirs()
-                        Toast.makeText(context, "Đã xoá cache", Toast.LENGTH_SHORT).show()
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Xoá cache") }
-                    SwitchRow("Xoá file ZIP sau khi nhập xong", settings.deleteZipAfterImport) {
+                        Toast.makeText(context, s.cacheClearedToast, Toast.LENGTH_SHORT).show()
+                    }, modifier = Modifier.fillMaxWidth()) { Text(s.clearCacheBtn) }
+                    SwitchRow(s.deleteZipAfter, settings.deleteZipAfterImport) {
                         scope.launch { store.setDeleteZip(it) }
                     }
-                    SwitchRow("Hỏi trước khi xoá game", settings.confirmBeforeDelete) {
+                    SwitchRow(s.confirmDelete, settings.confirmBeforeDelete) {
                         scope.launch { store.setConfirmDelete(it) }
                     }
                 }
             }
 
             // ---------- About (RenDroid) ----------
-            SettingsSection("About") {
-                ExpandRow("ℹ️  About", "Version info & licenses", openSection == "about") { toggle("about") }
+            SettingsSection(s.about) {
+                ExpandRow(s.aboutRow, s.aboutSub, openSection == "about") { toggle("about") }
                 if (openSection == "about") {
                     Row(verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable {
@@ -175,10 +181,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                                     aboutTaps >= 7 -> {
                                         aboutTaps = 0
                                         scope.launch { store.setDeveloperMode(true) }
-                                        Toast.makeText(context, "Developer Mode đã bật", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, s.devEnabled, Toast.LENGTH_SHORT).show()
                                     }
                                     aboutTaps >= 4 -> Toast.makeText(context,
-                                        "Còn ${7 - aboutTaps} lần chạm nữa để bật Developer Mode", Toast.LENGTH_SHORT).show()
+                                        s.devTapsLeft.format(7 - aboutTaps), Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }.padding(vertical = 6.dp)) {
@@ -186,25 +192,25 @@ fun SettingsScreen(onBack: () -> Unit) {
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text("Rem Gose", fontWeight = FontWeight.Bold, color = RemGoseColors.TextPrimary, fontSize = 17.sp)
-                            Text("Version 0.1.0 · Cho Anh Quảng", color = RemGoseColors.TextMuted, fontSize = 13.sp)
-                            Text("Chạy bằng Ren'Py engine (renpy.org)", color = RemGoseColors.TextMuted, fontSize = 13.sp)
+                            Text(s.versionLine.format(appVersionName(context)), color = RemGoseColors.TextMuted, fontSize = 13.sp)
+                            Text(s.poweredBy, color = RemGoseColors.TextMuted, fontSize = 13.sp)
                         }
                     }
                     OutlinedButton(onClick = { showLicenses = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Version info & licenses")
+                        Text(s.licensesBtn)
                     }
                 }
-                ExpandRow("〈〉  Advanced Settings", "Debug mode & log export", openSection == "advanced") { toggle("advanced") }
+                ExpandRow(s.advanced, s.advancedSub, openSection == "advanced") { toggle("advanced") }
                 if (openSection == "advanced") {
                     if (settings.developerMode) {
-                        Text("Developer Mode: ĐANG BẬT", color = RemGoseColors.Success, fontSize = 13.sp)
+                        Text(s.devModeOn, color = RemGoseColors.Success, fontSize = 13.sp)
                     }
-                    ChoiceRow("Debug mode", settings.debugMode,
-                        listOf("off" to "Off", "troubleshooting" to "Troubleshooting", "creative" to "Creative Preview")) {
+                    ChoiceRow(s.debugMode, settings.debugMode,
+                        listOf("off" to s.debugOff, "troubleshooting" to s.debugTroubleshooting, "creative" to s.debugCreative)) {
                         scope.launch { store.setDebugMode(it) }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { showLog = true }, modifier = Modifier.weight(1f)) { Text("Log Viewer") }
+                        OutlinedButton(onClick = { showLog = true }, modifier = Modifier.weight(1f)) { Text(s.logViewer) }
                         OutlinedButton(onClick = {
                             scope.launch {
                                 val file = withContext(Dispatchers.IO) { exportLog(context) }
@@ -212,13 +218,13 @@ fun SettingsScreen(onBack: () -> Unit) {
                                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"; putExtra(Intent.EXTRA_STREAM, uri)
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }, "Export Log File"))
+                                }, s.exportLog))
                             }
-                        }, modifier = Modifier.weight(1f)) { Text("Export Log File") }
+                        }, modifier = Modifier.weight(1f)) { Text(s.exportLog) }
                     }
                     if (settings.developerMode) {
                         TextButton(onClick = { scope.launch { store.setDeveloperMode(false) } }) {
-                            Text("Tắt Developer Mode", color = RemGoseColors.Error)
+                            Text(s.disableDevMode, color = RemGoseColors.Error)
                         }
                     }
                 }
@@ -227,53 +233,53 @@ fun SettingsScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(18.dp))
             OutlinedButton(onClick = { showReset = true }, modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = RemGoseColors.Error)) {
-                Text("Đặt lại toàn bộ cài đặt")
+                Text(s.resetSettings)
             }
             Spacer(Modifier.height(12.dp))
             Button(onClick = onBack, modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = RemGoseColors.AccentViolet)) { Text("Quay lại thư viện") }
+                colors = ButtonDefaults.buttonColors(containerColor = RemGoseColors.AccentViolet)) { Text(s.backToLibrary) }
             Spacer(Modifier.height(24.dp))
         }
     }
 
     if (themeDialog) {
-        RadioDialog("Select Theme", settings.theme,
-            listOf("system" to "System Default", "dark" to "Dark", "light" to "Light"),
+        RadioDialog(s.selectTheme, settings.theme,
+            listOf("system" to s.themeSystem, "dark" to s.themeDark, "light" to s.themeLight),
             onPick = { themeDialog = false; scope.launch { store.setTheme(it) } },
             onClose = { themeDialog = false })
     }
     if (languageDialog) {
-        RadioDialog("Select Language", settings.language, AppLanguages,
+        RadioDialog(s.selectLanguage, settings.language, AppLanguages,
             onPick = { languageDialog = false; scope.launch { store.setLanguage(it) } },
             onClose = { languageDialog = false })
     }
     if (showLicenses) {
-        AlertDialog(onDismissRequest = { showLicenses = false }, title = { Text("Licenses") },
-            text = { Text("Rem Gose 0.1.0\n\n• Ren'Py engine — MIT License (renpy.org)\n• Kotlin & Jetpack Compose — Apache 2.0\n• Room / DataStore / WorkManager — Apache 2.0\n• SDL2 — zlib license\n\nỨng dụng cho Anh Quảng, ký bằng chữ ký chiuaquang.") },
-            confirmButton = { TextButton(onClick = { showLicenses = false }) { Text("Close") } })
+        AlertDialog(onDismissRequest = { showLicenses = false }, title = { Text(s.licensesTitle) },
+            text = { Text(s.licensesBody.format(appVersionName(context))) },
+            confirmButton = { TextButton(onClick = { showLicenses = false }) { Text(s.close) } })
     }
     if (showLog) {
-        var logText by remember { mutableStateOf("Đang đọc log…") }
+        var logText by remember { mutableStateOf(s.logLoading) }
         LaunchedEffect(Unit) {
             logText = withContext(Dispatchers.IO) {
                 runCatching {
                     Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-t", "300")).inputStream
                         .bufferedReader().readText()
-                }.getOrDefault("Không đọc được log trên máy này.")
+                }.getOrDefault(s.logUnavailable)
             }
         }
-        AlertDialog(onDismissRequest = { showLog = false }, title = { Text("Log Viewer") },
+        AlertDialog(onDismissRequest = { showLog = false }, title = { Text(s.logViewer) },
             text = {
                 Text(logText.takeLast(4000), fontSize = 11.sp,
                     modifier = Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()))
             },
-            confirmButton = { TextButton(onClick = { showLog = false }) { Text("Close") } })
+            confirmButton = { TextButton(onClick = { showLog = false }) { Text(s.close) } })
     }
     if (showReset) {
-        AlertDialog(onDismissRequest = { showReset = false }, title = { Text("Đặt lại cài đặt?") },
-            text = { Text("Mọi tuỳ chọn sẽ về mặc định. Game và save không bị xoá.") },
-            confirmButton = { TextButton(onClick = { showReset = false; scope.launch { store.resetAll() } }) { Text("Đặt lại") } },
-            dismissButton = { TextButton(onClick = { showReset = false }) { Text("Huỷ") } })
+        AlertDialog(onDismissRequest = { showReset = false }, title = { Text(s.resetSettingsTitle) },
+            text = { Text(s.resetSettingsMsg) },
+            confirmButton = { TextButton(onClick = { showReset = false; scope.launch { store.resetAll() } }) { Text(s.resetBtn) } },
+            dismissButton = { TextButton(onClick = { showReset = false }) { Text(s.cancel) } })
     }
 }
 
@@ -303,7 +309,7 @@ private fun RadioDialog(title: String, value: String, options: List<Pair<String,
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onClose) { Text("Close") } })
+        confirmButton = { TextButton(onClick = onClose) { Text(LocalStrings.current.close) } })
 }
 
 @Composable
@@ -367,22 +373,49 @@ private fun ChoiceRow(label: String, value: String, options: List<Pair<String, S
     }
 }
 
+/** Phien ban app that, doc tu package da cai (khong ghi cung so lieu). */
+fun appVersionName(context: android.content.Context): String =
+    runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
+        .getOrNull() ?: "?"
+
 @Composable
 private fun RuntimeList(installed: List<RuntimeEntity>) {
+    val context = LocalContext.current
+    val s = LocalStrings.current
     val byVersion = installed.associateBy { it.version }
     Column {
         RuntimeCatalog.specs.forEach { spec ->
-            val state = byVersion[spec.version.toString()]?.statusPhase
+            val row = byVersion[spec.version.toString()]
+            val state = row?.statusPhase
                 ?: if (spec.inBundle) "READY" else "NOT_INSTALLED"
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Ren'Py ${spec.version}", color = RemGoseColors.TextPrimary, fontSize = 14.sp)
-                Text(when (state) {
-                    "READY" -> "Đã sẵn sàng"; "INSTALLING" -> "Đang cài…"; "ERROR" -> "Lỗi"
-                    else -> if (spec.inBundle) "Có sẵn" else "Chưa cài"
-                }, fontSize = 13.sp, color = when (state) {
-                    "READY" -> RemGoseColors.Success; "ERROR" -> RemGoseColors.Error; else -> RemGoseColors.TextMuted
-                })
+            // Trung thuc: ban 8.x khong bundle van choi duoc bang engine 8.5.2 tich hop
+            val usesBundled = !spec.inBundle && spec.version.major ==
+                RuntimeCatalog.bundledSpec().version.major
+            Column(Modifier.fillMaxWidth()
+                .clickable(enabled = state != "READY" && state != "INSTALLING") {
+                    WorkManager.getInstance(context).enqueue(
+                        OneTimeWorkRequestBuilder<com.remgose.rem.worker.RuntimeInstallWorker>()
+                            .setInputData(workDataOf("version" to spec.version.toString())).build())
+                }
+                .padding(vertical = 4.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Ren'Py ${spec.version}", color = RemGoseColors.TextPrimary, fontSize = 14.sp)
+                    Text(when {
+                        state == "READY" && spec.inBundle -> s.rtBundled
+                        state == "READY" -> s.rtReady
+                        state == "INSTALLING" -> s.rtInstalling
+                        state == "ERROR" -> s.rtError
+                        usesBundled -> s.rtUsesBundled.format(RuntimeCatalog.BUNDLED_VERSION)
+                        else -> s.rtNotInstalled
+                    }, fontSize = 13.sp, color = when {
+                        state == "READY" || usesBundled -> RemGoseColors.Success
+                        state == "ERROR" -> RemGoseColors.Error
+                        else -> RemGoseColors.TextMuted
+                    })
+                }
+                row?.statusMessage?.let {
+                    Text(it, color = RemGoseColors.TextMuted, fontSize = 11.sp)
+                }
             }
         }
     }
@@ -391,13 +424,14 @@ private fun RuntimeList(installed: List<RuntimeEntity>) {
 @Composable
 private fun StorageStats() {
     val context = LocalContext.current
+    val s = LocalStrings.current
     val stats = remember {
         fun sizeOf(dir: File): Long = if (!dir.exists()) 0 else dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
         listOf(
-            "Game" to sizeOf(File(context.filesDir, "games")),
-            "Runtime" to sizeOf(File(context.filesDir, "runtimes")),
-            "Save" to sizeOf(File(context.filesDir, "saves")),
-            "Cache" to sizeOf(context.cacheDir),
+            s.storageGames to sizeOf(File(context.filesDir, "games")),
+            s.storageRuntimes to sizeOf(File(context.filesDir, "runtimes")),
+            s.storageSaves to sizeOf(File(context.filesDir, "saves")),
+            s.storageCache to sizeOf(context.cacheDir),
         )
     }
     Column {
@@ -407,7 +441,7 @@ private fun StorageStats() {
                 Text(formatSize(bytes), color = RemGoseColors.TextMuted, fontSize = 14.sp)
             }
         }
-        Text("Thư mục game: ${File(context.filesDir, "games").absolutePath}",
+        Text(s.gamesFolder.format(File(context.filesDir, "games").absolutePath),
             color = RemGoseColors.TextMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }

@@ -72,13 +72,13 @@ fun LibraryScreen(
             if (games.isNotEmpty()) {
                 OutlinedTextField(
                     value = query, onValueChange = { query = it },
-                    placeholder = { Text("Tìm game…") }, singleLine = true,
+                    placeholder = { Text(LocalStrings.current.searchGames) }, singleLine = true,
                     leadingIcon = { Text("🔍") },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                     shape = RoundedCornerShape(14.dp),
                 )
                 if (filtered.isEmpty()) {
-                    Text("Không tìm thấy game nào khớp \"$query\"",
+                    Text(LocalStrings.current.noResultsFor.format(query),
                         color = RemGoseColors.TextMuted, modifier = Modifier.padding(16.dp))
                 }
             }
@@ -96,7 +96,7 @@ fun LibraryScreen(
             modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
             containerColor = RemGoseColors.AccentViolet, contentColor = Color.White,
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text("Import", fontWeight = FontWeight.SemiBold) },
+            text = { Text(LocalStrings.current.importLabel, fontWeight = FontWeight.SemiBold) },
         )
     }
 }
@@ -113,10 +113,10 @@ private fun LibraryHeader(onSettingsClick: () -> Unit) {
                     Text("Rem Gose", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 IconButton(onClick = onSettingsClick) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Cài đặt", tint = Color.White)
+                    Icon(Icons.Filled.Settings, contentDescription = LocalStrings.current.settings, tint = Color.White)
                 }
             }
-            Text("Thư viện Visual Novel của Anh Quảng", color = Color(0xE6FFFFFF), fontSize = 14.sp)
+            Text(LocalStrings.current.appTagline, color = Color(0xE6FFFFFF), fontSize = 14.sp)
         }
     }
 }
@@ -145,14 +145,14 @@ private fun GameCard(game: GameEntity, onClick: (GameEntity) -> Unit, onPlay: (G
                     FloatingActionButton(onClick = { onPlay(game) },
                         modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp).size(44.dp),
                         shape = CircleShape, containerColor = RemGoseColors.Accent, contentColor = Color.White,
-                    ) { Icon(Icons.Filled.PlayArrow, contentDescription = "Chơi") }
+                    ) { Icon(Icons.Filled.PlayArrow, contentDescription = LocalStrings.current.play) }
                 }
             }
             Column(Modifier.padding(12.dp)) {
                 Text(game.displayName ?: game.name, fontWeight = FontWeight.SemiBold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, color = RemGoseColors.TextPrimary)
                 Text(
-                    "Ren'Py ${game.renPyVersion ?: "?"} · ${game.runtimeVersionOverride ?: "runtime tự động"}",
+                    "Ren'Py ${game.renPyVersion ?: "?"} · ${game.runtimeVersionOverride ?: LocalStrings.current.runtimeAuto}",
                     fontSize = 12.sp, color = RemGoseColors.TextMuted, maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
                 if (game.statusPhase == "IMPORTING" || game.statusPhase == "ERROR") {
@@ -169,10 +169,10 @@ private fun GameCard(game: GameEntity, onClick: (GameEntity) -> Unit, onPlay: (G
 @Composable
 private fun StatusBadge(game: GameEntity, modifier: Modifier = Modifier) {
     val (label, color) = when (game.statusPhase) {
-        "READY" -> "Sẵn sàng" to RemGoseColors.Success
-        "IMPORTING" -> "Đang nhập" to RemGoseColors.Warning
-        "ERROR" -> "Lỗi" to RemGoseColors.Error
-        "RUNNING" -> "Đang chơi" to RemGoseColors.AccentPink
+        "READY" -> LocalStrings.current.statusReady to RemGoseColors.Success
+        "IMPORTING" -> LocalStrings.current.statusImporting to RemGoseColors.Warning
+        "ERROR" -> LocalStrings.current.statusError to RemGoseColors.Error
+        "RUNNING" -> LocalStrings.current.statusRunning to RemGoseColors.AccentPink
         else -> game.statusPhase to RemGoseColors.TextMuted
     }
     Box(modifier.clip(RoundedCornerShape(50)).background(Color(0xCC0B0B14)).padding(horizontal = 10.dp, vertical = 4.dp)) {
@@ -186,13 +186,13 @@ private fun EmptyLibrary(onImportClick: () -> Unit) {
         verticalArrangement = Arrangement.Center) {
         RemGoseLogo(104)
         Spacer(Modifier.height(16.dp))
-        Text("Chưa có game nào", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = RemGoseColors.TextPrimary)
+        Text(LocalStrings.current.libraryEmptyTitle, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = RemGoseColors.TextPrimary)
         Spacer(Modifier.height(8.dp))
-        Text("Nhập game Ren'Py từ file ZIP hoặc thư mục để bắt đầu chơi.",
+        Text(LocalStrings.current.libraryEmptySub,
             color = RemGoseColors.TextMuted, fontSize = 14.sp)
         Spacer(Modifier.height(20.dp))
         Button(onClick = onImportClick, colors = ButtonDefaults.buttonColors(containerColor = RemGoseColors.AccentViolet)) {
-            Icon(Icons.Filled.Add, contentDescription = null); Spacer(Modifier.width(6.dp)); Text("Nhập game đầu tiên")
+            Icon(Icons.Filled.Add, contentDescription = null); Spacer(Modifier.width(6.dp)); Text(LocalStrings.current.importFirstGame)
         }
     }
 }
