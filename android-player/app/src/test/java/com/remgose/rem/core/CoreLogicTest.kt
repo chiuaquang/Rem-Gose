@@ -1,6 +1,7 @@
 package com.remgose.rem.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,6 +43,16 @@ class CoreLogicTest {
         File(renpyDir, "vc_version.py").delete()
         File(renpyDir, "__init__.py").writeText("version_tuple = (7, 4, 11, 0)\n")
         assertEquals(RenPyVersion(7, 4, 11), GameDetector.detectVersion(renpyDir, gameDir))
+    }
+    @Test fun runtimeStoreReadyNeedsSoAndMainPy() {
+        val filesDir = Files.createTempDirectory("rgrt").toFile()
+        assertFalse(RuntimeStore.isReady(filesDir, "8.3.7"))
+        val so = RuntimeStore.soFile(filesDir, "8.3.7", RuntimeStore.deviceAbi())
+        so.parentFile?.mkdirs(); so.writeBytes(byteArrayOf(1))
+        assertFalse(RuntimeStore.isReady(filesDir, "8.3.7")) // chua co private/main.py
+        val mainPy = File(RuntimeStore.privateDir(filesDir, "8.3.7"), "main.py")
+        mainPy.parentFile?.mkdirs(); mainPy.writeText("# main")
+        assertTrue(RuntimeStore.isReady(filesDir, "8.3.7"))
     }
     @Test fun detectRequiresGameDir() {
         val root = Files.createTempDirectory("rg").toFile()

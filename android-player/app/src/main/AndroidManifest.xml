@@ -30,11 +30,10 @@
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
         <activity android:name=".ui.FileBrowserActivity" android:exported="false" />
 
-        <!-- Moi game chay o process rieng nhu RenDroid (:game0). V1 dung 1 slot,
-             mo rong them Slot1..3 khi can chay nhieu game song song. -->
+        <!-- Gatekeeper chay o process CHINH de song sot khi engine (:game0)
+             tu khoi dong lai luc doi runtime tai rieng. -->
         <activity android:name=".runner.GameRunnerActivity"
             android:exported="false"
-            android:process=":game0"
             android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden|navigation"

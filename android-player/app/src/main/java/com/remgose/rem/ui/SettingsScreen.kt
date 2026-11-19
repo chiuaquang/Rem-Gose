@@ -386,8 +386,13 @@ private fun RuntimeList(installed: List<RuntimeEntity>) {
     Column {
         RuntimeCatalog.specs.forEach { spec ->
             val row = byVersion[spec.version.toString()]
-            val state = row?.statusPhase
-                ?: if (spec.inBundle) "READY" else "NOT_INSTALLED"
+            // Runtime tai rieng da du file tren may thi la READY du DB chua kip ghi
+            val downloaded = !spec.inBundle && row?.statusPhase != "INSTALLING" &&
+                com.remgose.rem.core.RuntimeStore.isReady(context.filesDir, spec.version.toString())
+            val state = when {
+                downloaded -> "READY"
+                else -> row?.statusPhase ?: if (spec.inBundle) "READY" else "NOT_INSTALLED"
+            }
             // Trung thuc: ban 8.x khong bundle van choi duoc bang engine 8.5.2 tich hop
             val usesBundled = !spec.inBundle && spec.version.major ==
                 RuntimeCatalog.bundledSpec().version.major
