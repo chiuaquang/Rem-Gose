@@ -1,9 +1,0 @@
-*.iml
-.gradle/
-local.properties
-/build
-/app/build
-keystore.properties
-*.p12
-*.jks
-*.keystore
