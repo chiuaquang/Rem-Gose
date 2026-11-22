@@ -1,6 +1,6 @@
 # Rem Gose — Hỗ trợ dịch game miễn phí
 
-**Rem Gose dịch — AI của Chìu Quảng**
+**Rem Gose dịch — AI của Dex Bill**
 
 Rem Gose hỗ trợ dịch game **miễn phí** cho cộng đồng: dịch game Unity, Ren'Py, Godot, RPG Maker... sang tiếng Việt, dịch trực tiếp trong file game và đóng gói bản hoàn chỉnh để chơi ngay.
 
@@ -32,10 +32,8 @@ Rem Gose hỗ trợ dịch game **miễn phí** cho cộng đồng: dịch game 
 ## Liên hệ
 
 - Discord: **quang_ntb** (Chìu Quang)
-- Nhận hỗ trợ dịch game tại server SIXSEVN và Tay Nhanh Hơn Não
-
 Muốn dịch game nào, cứ nhắn — Rem Gose hỗ trợ miễn phí.
 
 ---
 
-*Rem Gose dịch — AI của Chìu Quảng*
+*Rem Gose dịch — AI của Dex Bill*
